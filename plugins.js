@@ -23,9 +23,15 @@ function Plugin(name) {
     this.timeout = get_timeout(name);
     var full_paths = [];
     this._get_plugin_paths().forEach(function (pp) {
-        full_paths.push(path.resolve(pp, name, 'package.json'));
-        full_paths.push(path.resolve(pp, name) + '.js');
-        full_paths.push(path.resolve(pp, name, 'index.js'));
+        try {
+            var stat = fs.statSync(path.resolve(pp, name));
+            if (stat.isDirectory()) {
+                full_paths.push(path.resolve(pp, name, 'package.json'));
+            }
+        }
+        catch (e) {
+            full_paths.push(path.resolve(pp, name) + '.js');
+        }
     });
     this.full_paths = full_paths;
     this.config = config;
