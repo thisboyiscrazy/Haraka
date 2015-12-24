@@ -17,22 +17,30 @@ exports.registered_plugins = {};
 exports.plugin_list = [];
 var order = 0;
 
-function Plugin(name) {
+function Plugin (name) {
     this.name = name;
     this.base = {};
     this.timeout = get_timeout(name);
     var full_paths = [];
     this._get_plugin_paths().forEach(function (pp) {
-        full_paths.push(path.resolve(pp, name) + '.js');
-        full_paths.push(path.resolve(pp, name, 'index.js'));
-        full_paths.push(path.resolve(pp, name, 'package.json'));
+        try {
+            var stat = fs.statSync(path.resolve(pp, name));
+            if (stat.isDirectory()) {
+                full_paths.push(path.resolve(pp, name, 'package.json'));
+            }
+        }
+        catch (e) {
+            if (!/\bnode_modules\b/.test(pp)) {
+                full_paths.push(path.resolve(pp, name) + '.js');
+            }
+        }
     });
     this.full_paths = full_paths;
     this.config = config;
     this.hooks = {};
 }
 
-Plugin.prototype.register_hook = function(hook_name, method_name, priority) {
+Plugin.prototype.register_hook = function (hook_name, method_name, priority) {
     priority = parseInt(priority);
     if (!priority) priority = 0;
     if (priority > 100) priority = 100;
@@ -90,8 +98,10 @@ Plugin.prototype._get_plugin_paths = function () {
         paths.push(path.join(process.env.HARAKA, 'node_modules'));
     }
 
-    paths.push(path.join(__dirname, 'plugins'));
-    paths.push(path.join(__dirname, 'node_modules'));
+    if (process.env.HARAKA != __dirname) {
+        paths.push(path.join(__dirname, 'plugins'));
+        paths.push(path.join(__dirname, 'node_modules'));
+    }
 
     return paths;
 };
