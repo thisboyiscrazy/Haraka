@@ -30,7 +30,9 @@ function Plugin(name) {
             }
         }
         catch (e) {
-            full_paths.push(path.resolve(pp, name) + '.js');
+            if (!/\bnode_modules\b/.test(pp)) {
+                full_paths.push(path.resolve(pp, name) + '.js');
+            }
         }
     });
     this.full_paths = full_paths;
@@ -95,9 +97,10 @@ Plugin.prototype._get_plugin_paths = function () {
         paths.push(path.join(process.env.HARAKA, 'plugins'));
         paths.push(path.join(process.env.HARAKA, 'node_modules'));
     }
-
-    paths.push(path.join(__dirname, 'plugins'));
-    paths.push(path.join(__dirname, 'node_modules'));
+    else {
+        paths.push(path.join(__dirname, 'plugins'));
+        paths.push(path.join(__dirname, 'node_modules'));
+    }
 
     return paths;
 };
