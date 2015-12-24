@@ -97,7 +97,7 @@ Plugin.prototype._get_plugin_paths = function () {
         paths.push(path.join(process.env.HARAKA, 'plugins'));
         paths.push(path.join(process.env.HARAKA, 'node_modules'));
     }
-    
+
     if (process.env.HARAKA != __dirname) {
         paths.push(path.join(__dirname, 'plugins'));
         paths.push(path.join(__dirname, 'node_modules'));
