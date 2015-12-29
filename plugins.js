@@ -17,7 +17,7 @@ exports.registered_plugins = {};
 exports.plugin_list = [];
 var order = 0;
 
-function Plugin(name) {
+function Plugin (name) {
     this.name = name;
     this.base = {};
     this.timeout = get_timeout(name);
@@ -40,7 +40,7 @@ function Plugin(name) {
     this.hooks = {};
 }
 
-Plugin.prototype.register_hook = function(hook_name, method_name, priority) {
+Plugin.prototype.register_hook = function (hook_name, method_name, priority) {
     priority = parseInt(priority);
     if (!priority) priority = 0;
     if (priority > 100) priority = 100;
