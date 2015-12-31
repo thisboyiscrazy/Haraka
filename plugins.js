@@ -18,15 +18,25 @@ exports.plugin_list = [];
 var order = 0;
 
 function Plugin (name) {
+    var plugin = this;
     this.name = name;
     this.base = {};
     this.timeout = get_timeout(name);
+    plugin.hasPackageJson = false;
     var full_paths = [];
     this._get_plugin_paths().forEach(function (pp) {
         try {
             var stat = fs.statSync(path.resolve(pp, name));
             if (stat.isDirectory()) {
-                full_paths.push(path.resolve(pp, name, 'package.json'));
+                try {
+                    fs.statSync(path.resolve(pp, name, 'package.json'));
+                    full_paths.push(path.resolve(pp, name, 'package.json'));
+                    plugin.hasPackageJson = true;
+                }
+                catch (e) {
+                    // No package.json - assume index.js
+                    full_paths.push(path.resolve(pp, name, 'index.js'));
+                }
             }
         }
         catch (e) {
@@ -197,13 +207,9 @@ plugins._load_and_compile_plugin = function (name) {
     var fp = plugin.full_paths;
     var rf;
     var last_err;
-    var hasPackageJson;
     for (var i=0, j=fp.length; i<j; i++) {
         try {
             rf = fs.readFileSync(fp[i]);
-            if (/package.json$/.test(fp[i])) {
-                hasPackageJson = true;
-            }
             break;
         }
         catch (err) {
@@ -220,14 +226,14 @@ plugins._load_and_compile_plugin = function (name) {
     }
 
     var code;
-    if (hasPackageJson) {
+    if (plugin.hasPackageJson) {
         code = '"use strict"; var p = require("' + name + '"); for (var attrname in p) { exports[attrname] = p[attrname];}';
     }
     else {
         code = '"use strict";' + rf;
     }
     var sandbox = {
-        require: this._make_custom_require(fp[i], hasPackageJson),
+        require: this._make_custom_require(fp[i], plugin.hasPackageJson),
         __filename: fp[i],
         __dirname:  path.dirname(fp[i]),
         exports: plugin,
