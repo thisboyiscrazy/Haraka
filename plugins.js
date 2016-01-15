@@ -51,16 +51,16 @@ Plugin.prototype._get_plugin_path = function () {
     if (process.env.HARAKA) {
         // Installed mode - started via bin/haraka
         paths.push(
-            path.resolve(process.env.HARAKA, 'node_modules', name, 'package.json'),
             path.resolve(process.env.HARAKA, 'plugins', name + '.js'),
             path.resolve(process.env.HARAKA, 'plugins', name, 'package.json')
+            path.resolve(process.env.HARAKA, 'node_modules', name, 'package.json'),
         );
     }
 
     paths.push(
-        path.resolve(__dirname, 'node_modules', name, 'package.json'),
         path.resolve(__dirname, 'plugins', name + '.js'),
         path.resolve(__dirname, 'plugins', name, 'package.json')
+        path.resolve(__dirname, 'node_modules', name, 'package.json'),
     );
 
     paths.forEach(function (pp) {
