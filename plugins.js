@@ -22,32 +22,59 @@ function Plugin (name) {
     this.name = name;
     this.base = {};
     this.timeout = get_timeout(name);
-    plugin.hasPackageJson = false;
-    var full_paths = [];
-    this._get_plugin_paths().forEach(function (pp) {
+    this._get_plugin_path();
+    this.config = config;
+    this.hooks = {};
+}
+
+Plugin.prototype._get_plugin_path = function () {
+    /* From https://github.com/haraka/Haraka/pull/1278#issuecomment-168856528
+    In Development mode, or install via a plain "git clone":
+
+        Plugin in node_modules. Contains a package.json file.
+        Plain plugin in plugins/ folder
+        Plugin in a folder in plugins/<name>/ folder. Contains a package.json.
+
+    In "installed" mode (via haraka -i <path>):
+
+        Plugin in <path>/node_modules. Contains a package.json file.
+        Plain plugin in <path>/plugins/ folder
+        Plugin in a folder in <path>/plugins/<name>/folder. (same concept as above)
+        Plugin in <core_haraka_dir>/node_modules.
+        Core plugin in <core_haraka_dir>/plugins/ folder
+        Plugin in a folder in <core_haraka_dir>/plugins/<name>/ folder. (same concept as above)
+    */
+
+    this.hasPackageJson = false;
+
+    var paths = [];
+    if (process.env.HARAKA) {
+        // Installed mode - started via bin/haraka
+        paths.push(
+            path.resolve(process.env.HARAKA, 'node_modules', name, 'package.json'),
+            path.resolve(process.env.HARAKA, 'plugins', name + '.js'),
+            path.resolve(process.env.HARAKA, 'plugins', name, 'package.json')
+        );
+    }
+
+    paths.push(
+        path.resolve(__dirname, 'node_modules', name, 'package.json'),
+        path.resolve(__dirname, 'plugins', name + '.js'),
+        path.resolve(__dirname, 'plugins', name, 'package.json')
+    );
+
+    paths.forEach(function (pp) {
         try {
-            var stat = fs.statSync(path.resolve(pp, name));
-            if (stat.isDirectory()) {
-                try {
-                    fs.statSync(path.resolve(pp, name, 'package.json'));
-                    full_paths.push(path.resolve(pp, name, 'package.json'));
-                    plugin.hasPackageJson = true;
-                }
-                catch (e) {
-                    // No package.json - assume index.js
-                    full_paths.push(path.resolve(pp, name, 'index.js'));
-                }
+            fs.statSync(pp);
+            this.plugin_path = pp;
+            if (/\/package\.json$/.test(pp)) {
+                this.hasPackageJson = true;
             }
         }
         catch (e) {
-            if (!/\bnode_modules\b/.test(pp)) {
-                full_paths.push(path.resolve(pp, name) + '.js');
-            }
+            // ignore error
         }
     });
-    this.full_paths = full_paths;
-    this.config = config;
-    this.hooks = {};
 }
 
 Plugin.prototype.register_hook = function (hook_name, method_name, priority) {
@@ -87,33 +114,6 @@ Plugin.prototype.inherits = function (parent_name) {
         parent_plugin.register.call(this);
     }
     this.base[parent_name] = parent_plugin;
-};
-
-Plugin.prototype._get_plugin_paths = function () {
-    var paths = [];
-
-    // Allow environment customized path to plugins in addition to defaults.
-    // Multiple paths separated by (semi-)colon ':|;' depending on environment.
-    if (process.env.HARAKA_PLUGIN_PATH) {
-        var separator = /^win/.test(os.platform()) ? ';' : ':';
-        process.env.HARAKA_PLUGIN_PATH.split(separator).map(function(p) {
-            var pNorm = path.normalize(p);
-            logger.logdebug('Adding plugin path: ' + pNorm);
-            paths.push(pNorm);
-        });
-    }
-
-    if (process.env.HARAKA) {
-        paths.push(path.join(process.env.HARAKA, 'plugins'));
-        paths.push(path.join(process.env.HARAKA, 'node_modules'));
-    }
-
-    if (process.env.HARAKA != __dirname) {
-        paths.push(path.join(__dirname, 'plugins'));
-        paths.push(path.join(__dirname, 'node_modules'));
-    }
-
-    return paths;
 };
 
 function get_timeout (name) {
@@ -204,25 +204,17 @@ plugins.server = { notes: {} };
 
 plugins._load_and_compile_plugin = function (name) {
     var plugin = new Plugin(name);
-    var fp = plugin.full_paths;
     var rf;
     var last_err;
-    for (var i=0, j=fp.length; i<j; i++) {
-        try {
-            rf = fs.readFileSync(fp[i]);
-            break;
-        }
-        catch (err) {
-            last_err = err;
-            continue;
-        }
+    try {
+        rf = fs.readFileSync(this.plugin_path);
     }
-    if (!rf) {
+    catch (err) {
         if (config.get('smtp.ini').main.ignore_bad_plugins) {
             logger.logcrit('Loading plugin ' + name + ' failed: ' + last_err);
             return;
         }
-        throw 'Loading plugin ' + name + ' failed: ' + last_err;
+        throw 'Loading plugin ' + name + ' failed: ' + err;
     }
 
     var code;
