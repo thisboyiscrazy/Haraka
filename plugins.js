@@ -31,36 +31,37 @@ Plugin.prototype._get_plugin_path = function () {
     /* From https://github.com/haraka/Haraka/pull/1278#issuecomment-168856528
     In Development mode, or install via a plain "git clone":
 
-        Plugin in node_modules. Contains a package.json file.
         Plain plugin in plugins/ folder
         Plugin in a folder in plugins/<name>/ folder. Contains a package.json.
+        Plugin in node_modules. Contains a package.json file.
 
     In "installed" mode (via haraka -i <path>):
 
-        Plugin in <path>/node_modules. Contains a package.json file.
         Plain plugin in <path>/plugins/ folder
         Plugin in a folder in <path>/plugins/<name>/folder. (same concept as above)
-        Plugin in <core_haraka_dir>/node_modules.
+        Plugin in <path>/node_modules. Contains a package.json file.
         Core plugin in <core_haraka_dir>/plugins/ folder
         Plugin in a folder in <core_haraka_dir>/plugins/<name>/ folder. (same concept as above)
+        Plugin in <core_haraka_dir>/node_modules.
     */
 
     this.hasPackageJson = false;
-
+    var name = this.name;
+    
     var paths = [];
     if (process.env.HARAKA) {
         // Installed mode - started via bin/haraka
         paths.push(
             path.resolve(process.env.HARAKA, 'plugins', name + '.js'),
-            path.resolve(process.env.HARAKA, 'plugins', name, 'package.json')
-            path.resolve(process.env.HARAKA, 'node_modules', name, 'package.json'),
+            path.resolve(process.env.HARAKA, 'plugins', name, 'package.json'),
+            path.resolve(process.env.HARAKA, 'node_modules', name, 'package.json')
         );
     }
 
     paths.push(
         path.resolve(__dirname, 'plugins', name + '.js'),
-        path.resolve(__dirname, 'plugins', name, 'package.json')
-        path.resolve(__dirname, 'node_modules', name, 'package.json'),
+        path.resolve(__dirname, 'plugins', name, 'package.json'),
+        path.resolve(__dirname, 'node_modules', name, 'package.json')
     );
 
     paths.forEach(function (pp) {

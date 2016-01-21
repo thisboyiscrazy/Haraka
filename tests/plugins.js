@@ -12,6 +12,37 @@ var _setUp = function (done) {
     done();
 };
 
+/*
+
+From: https://github.com/haraka/Haraka/pull/1278#issuecomment-172134064
+
+    * Need to test installed mode + core mode
+    * Need to test each variation of loading plugins
+        INSTALLED MODE
+            * Create tests/installation/ with config/, plugins/, and node_modules
+            * Plugin in <install_dir>/plugins/<name>.js
+            * Plugin in <install_dir>/plugins/<name>/ with package.json
+            * Plugin in <install_dir>/node_modules/<name>/ with package.json
+        CORE MODE + INSTALLED MODE
+            * Plugin in <core>/plugins/<name>.js
+            * Plugin in <core>/plugins/<name>/ with package.json
+            * Plugin in <core>/node_modules/<name>/ with package.json
+    * Need to test conflict on name in various forms
+        * Check plugins/<name>.js loads, not node_modules/<name>/package.json
+        * Should be enough of a check(?)
+    * Need to test plugin not existing
+        * Check <bogus_name_guaranteed_to_not_exist> fails
+    * Need to test plugin existing and failing to compile
+        * Create bad plugin in tests/installation/plugins/bad_plugin.js
+    * Need to test plugin inheritance
+        * Base plugin in tests/installation/plugins/base_plugin.js
+        * Real plugin in tests/installation/plugins/inherits.js
+        * Check base methods work
+        * Check plugin.base.base_plugin is set/correct
+    * Plugin timeouts (already tested)
+
+*/
+
 exports.plugin = {
     'new Plugin() object': function (test) {
         var pi = new plugin.Plugin(piName);
